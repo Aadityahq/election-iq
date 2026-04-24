@@ -1,0 +1,65 @@
+.settings-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.settings-page h1 {
+  font-size: 2rem;
+  margin-bottom: 0.25rem;
+}
+
+.settings-subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.settings-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.settings-card h2 {
+  margin-bottom: 0.75rem;
+  font-size: 1.2rem;
+}
+
+.settings-card label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.settings-card select {
+  width: 100%;
+}
+
+.toggle-row {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.toggle-row input {
+  width: 18px;
+  height: 18px;
+}
+
+body.high-contrast {
+  --bg-dark: #000000;
+  --bg-darker: #050505;
+  --bg-light: #101010;
+  --text-primary: #ffffff;
+  --text-secondary: #e5e7eb;
+  --border-color: #ffffff;
+}
+
+body.large-text {
+  font-size: 18px;
+}
