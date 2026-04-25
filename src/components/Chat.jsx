@@ -1,224 +1,396 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getAIResponse } from '../services/geminiService';
 import { saveMessage } from '../services/firebase';
 import { generateSessionId } from '../utils/helpers';
 import UiIcon from './UiIcon';
 import '../styles/chat.css';
 
-function Chat() {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      role: 'bot',
-      text: 'Hello! I\'m ElectionIQ. I\'m here to help you understand how elections work in simple, easy-to-follow steps. What would you like to learn about?',
-      timestamp: new Date(),
-    },
-  ]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [language, setLanguage] = useState('English');
-  const [sessionId] = useState(() => generateSessionId());
-  const messagesEndRef = useRef(null);
+/* ─────────────────────────────────────────────────────────────────────────
+   Lightweight markdown → React elements renderer
+   Handles: **bold**, *italic*, numbered lists, bullet lists, line breaks
+   ───────────────────────────────────────────────────────────────────────── */
+function renderMarkdown(text) {
+  // Split into paragraphs / list items
+  const lines = text.split('\n');
+  const elements = [];
+  let key = 0;
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  let listBuffer = [];
+  let listType = null; // 'ol' | 'ul'
+
+  const flushList = () => {
+    if (!listBuffer.length) return;
+    const Tag = listType;
+    elements.push(
+      React.createElement(
+        Tag,
+        { key: key++, className: `md-list md-${listType}` },
+        listBuffer.map((item, i) =>
+          React.createElement('li', { key: i }, renderInline(item))
+        )
+      )
+    );
+    listBuffer = [];
+    listType = null;
   };
 
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+
+    // Ordered list:  1. item
+    const olMatch = line.match(/^\s*\d+\.\s+(.+)/);
+    if (olMatch) {
+      if (listType === 'ul') flushList();
+      listType = 'ol';
+      listBuffer.push(olMatch[1]);
+      continue;
+    }
+
+    // Unordered list: - item  or • item
+    const ulMatch = line.match(/^\s*[-•*]\s+(.+)/);
+    if (ulMatch) {
+      if (listType === 'ol') flushList();
+      listType = 'ul';
+      listBuffer.push(ulMatch[1]);
+      continue;
+    }
+
+    // Empty line → flush list + add spacer
+    if (!line.trim()) {
+      flushList();
+      elements.push(<span key={key++} className="md-br" />);
+      continue;
+    }
+
+    // Regular paragraph
+    flushList();
+    elements.push(
+      <p key={key++} className="md-p">
+        {renderInline(line)}
+      </p>
+    );
+  }
+
+  flushList();
+  return elements;
+}
+
+function renderInline(text) {
+  // Bold **text** or __text__
+  const parts = text.split(/(\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_)/g);
+  return parts.map((part, i) => {
+    if (/^\*\*(.+)\*\*$/.test(part) || /^__(.+)__$/.test(part)) {
+      const inner = part.slice(2, -2);
+      return <strong key={i}>{inner}</strong>;
+    }
+    if (/^\*(.+)\*$/.test(part) || /^_(.+)_$/.test(part)) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Constants
+   ───────────────────────────────────────────────────────────────────────── */
+const INITIAL_MESSAGES = [
+  {
+    id: 1,
+    role: 'bot',
+    text: "Hello! I'm **ElectionIQ** 🗳️ — your civic education guide.\n\nAsk me anything about how elections work: voter registration, polling, vote counting, and more!",
+    timestamp: new Date(),
+  },
+];
+
+const QUICK_ACTIONS = [
+  { label: 'Register to vote', icon: 'registration', query: 'How do I register to vote in India?' },
+  { label: 'Voting day', icon: 'voting', query: 'What happens on voting day?' },
+  { label: 'Vote counting', icon: 'counting', query: 'How are votes counted in India?' },
+  { label: 'Election timeline', icon: 'timeline', query: 'Explain the election timeline step by step.' },
+  { label: 'EVM & VVPAT', icon: 'shield', query: 'What is an EVM and VVPAT?' },
+];
+
+const LANG_MAP = {
+  English: 'en-US',
+  Hindi: 'hi-IN',
+  Spanish: 'es-ES',
+  French: 'fr-FR',
+};
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Chat Component
+   ───────────────────────────────────────────────────────────────────────── */
+function Chat() {
+  const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorBanner, setErrorBanner] = useState('');
+  const [lastFailedQuery, setLastFailedQuery] = useState(null);
+  const [language, setLanguage] = useState('English');
+  const [isListening, setIsListening] = useState(false);
+  const [sessionId] = useState(() => generateSessionId());
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+  const sendMessage = useCallback(
+    async (overrideText) => {
+      const messageText = (overrideText ?? input).replace(/[<>]/g, '').trim();
+      if (!messageText || loading) return;
 
-    const cleanedInput = input.replace(/[<>]/g, '').trim();
-    if (!cleanedInput) return;
+      setErrorBanner('');
+      setLastFailedQuery(null);
+      setInput('');
 
-    setError('');
+      const userMsg = { id: Date.now(), role: 'user', text: messageText, timestamp: new Date() };
+      setMessages((prev) => [...prev, userMsg]);
+      saveMessage(sessionId, messageText, 'user').catch(() => {});
+      setLoading(true);
 
-    const userMessage = {
-      id: messages.length + 1,
-      role: 'user',
-      text: cleanedInput,
-      timestamp: new Date(),
-    };
+      try {
+        const reply = await getAIResponse(messageText, language);
+        const botMsg = { id: Date.now() + 1, role: 'bot', text: reply, timestamp: new Date() };
+        setMessages((prev) => [...prev, botMsg]);
+        saveMessage(sessionId, reply, 'bot').catch(() => {});
+      } catch (err) {
+        console.error('[Chat] AI error:', err);
+        const errMsg = err.message || '';
+        const isQuota = errMsg.includes('429') || errMsg.toLowerCase().includes('quota') || errMsg.toLowerCase().includes('exhausted');
 
-    setMessages(prev => [...prev, userMessage]);
-    await saveMessage(sessionId, cleanedInput, 'user');
+        setErrorBanner(
+          isQuota
+            ? '⚠️ AI quota reached — please wait a moment and retry, or try again in a few minutes.'
+            : '⚠️ Could not reach ElectionIQ. Check your internet connection and retry.'
+        );
+        setLastFailedQuery(messageText);
 
-    setInput('');
-    setLoading(true);
+        const errBotMsg = {
+          id: Date.now() + 1,
+          role: 'bot',
+          text: isQuota
+            ? "I'm temporarily rate-limited. Please wait a moment and hit **Retry** above."
+            : "I ran into a connection issue. Please check your internet and try again.",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errBotMsg]);
+      } finally {
+        setLoading(false);
+        inputRef.current?.focus();
+      }
+    },
+    [input, loading, language, sessionId]
+  );
 
-    try {
-      const reply = await getAIResponse(cleanedInput, language);
-      const botMessage = {
-        id: messages.length + 2,
-        role: 'bot',
-        text: reply,
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, botMessage]);
-      await saveMessage(sessionId, reply, 'bot');
-    } catch (err) {
-      console.error('Error:', err);
-      setError('Could not connect to AI. Please try again.');
-      const errorMessage = {
-        id: messages.length + 2,
-        role: 'bot',
-        text: 'Sorry, I encountered an error. Please try again.',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setLoading(false);
+  const retryLast = () => {
+    if (lastFailedQuery) {
+      // Remove the last bot error message before retrying
+      setMessages((prev) => prev.slice(0, -1));
+      setErrorBanner('');
+      sendMessage(lastFailedQuery);
     }
   };
 
-  const handleQuickAction = (action) => {
-    setInput(action);
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
   };
 
   const startVoiceInput = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
       alert('Voice input is not supported in your browser.');
       return;
     }
-
-    const recognition = new SpeechRecognition();
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setInput(transcript);
-    };
+    const recognition = new SR();
+    recognition.lang = LANG_MAP[language] || 'en-US';
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognition.onresult = (e) => setInput(e.results[0][0].transcript);
     recognition.start();
   };
 
+  const clearChat = () => {
+    setMessages(INITIAL_MESSAGES);
+    setErrorBanner('');
+    setLastFailedQuery(null);
+  };
+
   return (
-    <div className="chat-container">
-      <div className="chat-header">
-        <h2>
-          <UiIcon name="chat" size={20} />
-          <span>ElectionIQ Chat</span>
-        </h2>
-        <div className="header-controls">
-          <label htmlFor="chat-language" className="sr-only">Preferred language</label>
-          <select
-            id="chat-language"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="language-select"
-            aria-label="Select response language"
-          >
-            <option value="English">English</option>
-            <option value="Hindi">हिंदी</option>
-            <option value="Spanish">Español</option>
-            <option value="French">Français</option>
-          </select>
-        </div>
-      </div>
+    <div className="chat-page-wrapper">
+      <div className="chat-container">
 
-      {error && (
-        <div className="chat-error" role="alert">
-          {error}
-        </div>
-      )}
-
-      <div className="messages-container" aria-live="polite" aria-label="Conversation history">
-        {messages.map((msg, idx) => (
-          <motion.div
-            key={msg.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className={`message ${msg.role}`}
-          >
-            <div className="message-content">
-              <p>{msg.text}</p>
-              <span className="timestamp">
-                {msg.timestamp.toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </span>
+        {/* ── Header ─────────────────────────────────────────── */}
+        <div className="chat-header">
+          <div className="chat-header-left">
+            <div className="bot-avatar">
+              <UiIcon name="shield" size={18} />
             </div>
-          </motion.div>
-        ))}
-        {loading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="message bot"
-          >
-            <div className="typing-indicator">
-              <span></span>
-              <span></span>
-              <span></span>
+            <div className="chat-header-info">
+              <h2>ElectionIQ</h2>
+              <div className="online-badge">
+                <span className={`online-dot ${loading ? 'thinking' : ''}`} />
+                {loading ? 'Thinking…' : 'AI-powered · Always available'}
+              </div>
             </div>
-          </motion.div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+          </div>
 
-      <div className="quick-actions" aria-label="Quick suggested questions">
-        <button
-          onClick={() => handleQuickAction('How do I register to vote?')}
-          className="action-btn"
-          aria-label="Quick ask: How do I register to vote"
-        >
-          <UiIcon name="registration" size={16} />
-          <span>Register</span>
-        </button>
-        <button
-          onClick={() => handleQuickAction('What happens on voting day?')}
-          className="action-btn"
-          aria-label="Quick ask: What happens on voting day"
-        >
-          <UiIcon name="voting" size={16} />
-          <span>Vote</span>
-        </button>
-        <button
-          onClick={() => handleQuickAction('How are votes counted?')}
-          className="action-btn"
-          aria-label="Quick ask: How are votes counted"
-        >
-          <UiIcon name="counting" size={16} />
-          <span>Counting</span>
-        </button>
-        <button
-          onClick={() => handleQuickAction('Explain the election timeline')}
-          className="action-btn"
-          aria-label="Quick ask: Explain the election timeline"
-        >
-          <UiIcon name="timeline" size={16} />
-          <span>Timeline</span>
-        </button>
-      </div>
+          <div className="header-controls">
+            <label htmlFor="chat-language" className="sr-only">Language</label>
+            <select
+              id="chat-language"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="language-select"
+            >
+              <option value="English">🌐 EN</option>
+              <option value="Hindi">🇮🇳 हिंदी</option>
+              <option value="Spanish">🇪🇸 ES</option>
+              <option value="French">🇫🇷 FR</option>
+            </select>
+            <button onClick={clearChat} className="clear-chat-btn" title="Clear conversation">
+              Clear
+            </button>
+          </div>
+        </div>
 
-      <div className="chat-input-area">
-        <div className="input-group">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-            placeholder="Ask about elections..."
-            className="chat-input"
-            disabled={loading}
-            aria-label="Ask a question about elections"
-          />
-          <button onClick={startVoiceInput} className="voice-btn" title="Voice input" aria-label="Start voice input">
-            <UiIcon name="voice" size={18} />
-          </button>
-          <button
-            onClick={sendMessage}
-            className="send-btn"
-            disabled={loading || !input.trim()}
-            aria-label="Send message"
-          >
-            {loading ? '...' : <UiIcon name="arrowRight" size={18} />}
-          </button>
+        {/* ── Error / Retry Banner ───────────────────────────── */}
+        <AnimatePresence>
+          {errorBanner && (
+            <motion.div
+              className="chat-error"
+              role="alert"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+            >
+              <span>{errorBanner}</span>
+              {lastFailedQuery && (
+                <button className="retry-btn" onClick={retryLast}>
+                  ↻ Retry
+                </button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Messages ──────────────────────────────────────── */}
+        <div
+          className="messages-container"
+          aria-live="polite"
+          aria-label="Conversation history"
+        >
+          <AnimatePresence initial={false}>
+            {messages.map((msg) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22 }}
+                className={`message ${msg.role}`}
+              >
+                {msg.role === 'bot' && (
+                  <div className="msg-avatar bot-msg-avatar">
+                    <UiIcon name="shield" size={14} />
+                  </div>
+                )}
+
+                <div className="message-content">
+                  <div className="message-body">
+                    {renderMarkdown(msg.text)}
+                  </div>
+                  <span className="timestamp">
+                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+
+                {msg.role === 'user' && (
+                  <div className="msg-avatar user-msg-avatar">You</div>
+                )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {loading && (
+            <motion.div
+              key="typing"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="message bot"
+            >
+              <div className="msg-avatar bot-msg-avatar">
+                <UiIcon name="shield" size={14} />
+              </div>
+              <div className="message-content">
+                <div className="typing-indicator">
+                  <span /><span /><span />
+                </div>
+              </div>
+            </motion.div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* ── Quick actions ──────────────────────────────────── */}
+        <div className="quick-actions" aria-label="Suggested questions">
+          <span className="quick-actions-label">Quick questions</span>
+          {QUICK_ACTIONS.map((action) => (
+            <button
+              key={action.label}
+              onClick={() => sendMessage(action.query)}
+              className="action-btn"
+              disabled={loading}
+              aria-label={`Ask: ${action.query}`}
+            >
+              <UiIcon name={action.icon} size={14} />
+              {action.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Input bar ─────────────────────────────────────── */}
+        <div className="chat-input-area">
+          <div className={`input-group ${isListening ? 'listening' : ''}`}>
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={isListening ? '🎙️ Listening…' : 'Ask about elections…'}
+              className="chat-input"
+              disabled={loading}
+              aria-label="Type your question"
+              maxLength={500}
+            />
+            <button
+              onClick={startVoiceInput}
+              className={`voice-btn ${isListening ? 'voice-btn--active' : ''}`}
+              title="Voice input"
+              aria-label="Start voice input"
+            >
+              <UiIcon name="voice" size={17} />
+            </button>
+            <button
+              onClick={() => sendMessage()}
+              className="send-btn"
+              disabled={loading || !input.trim()}
+              aria-label="Send message"
+            >
+              {loading
+                ? <span className="send-spinner" />
+                : <UiIcon name="arrowRight" size={17} />
+              }
+            </button>
+          </div>
+          <p className="input-hint">Press Enter to send · Shift+Enter for new line</p>
         </div>
       </div>
     </div>

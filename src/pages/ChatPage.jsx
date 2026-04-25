@@ -3,11 +3,7 @@ import Chat from '../components/Chat';
 import '../styles/pages.css';
 
 function ChatPage() {
-  return (
-    <div className="page-container">
-      <Chat />
-    </div>
-  );
+  return <Chat />;
 }
 
 export default ChatPage;

@@ -1,99 +1,130 @@
 import { getEnv } from './env';
 
 const API_KEY = getEnv('VITE_GEMINI_API_KEY');
+const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-const SYSTEM_PROMPT = `You are ElectionIQ, a friendly and neutral civic education assistant. Your role is to help users understand election processes in simple, clear language.
+/**
+ * Model cascade — fastest/cheapest first, falls back on 429 or error.
+ * Add more models here if quotas keep running out.
+ */
+const MODELS = [
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash',
+];
+
+const SYSTEM_PROMPT = `You are ElectionIQ, a friendly and neutral civic education assistant.
+Your role is to help users understand election processes in simple, clear language.
 
 Guidelines:
-- Break down complex topics into 2-3 short steps
-- Use bullet points and numbered lists for clarity
-- Ask "Does that make sense?" after explanations
+- Break down complex topics into 2-3 short numbered steps
+- Use bullet points for lists
 - Avoid any political bias or candidate endorsements
-- Cite official sources when possible
-- If asked about a specific country, tailor your answer to that country's process
-- Keep responses concise (under 150 words)
-- For off-topic questions, politely redirect to election education`;
+- If asked about a specific country, tailor your answer
+- Keep responses concise (under 200 words)
+- For off-topic questions, politely redirect to election education
+- Do NOT use markdown bold (**text**) — use plain text only`;
 
-export async function getAIResponse(prompt, language = 'English') {
-  const finalPrompt = `${SYSTEM_PROMPT}
-
-User asked in ${language}:
-${prompt}
-
-Please respond in ${language}.`;
-
+/**
+ * Try a single model. Returns { ok, text, status }.
+ */
+async function tryModel(model, body) {
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: finalPrompt }],
-            },
-          ],
-        }),
-      }
-    );
+    const res = await fetch(`${BASE_URL}/${model}:generateContent?key=${API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      return { ok: false, status: res.status, error: errorData?.error?.message || `HTTP ${res.status}` };
     }
 
-    const data = await response.json();
-    return (
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      'Sorry, I could not generate a response. Please try again.'
-    );
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) return { ok: false, status: 200, error: 'Empty response from model' };
+
+    return { ok: true, text };
   } catch (err) {
-    console.error('Gemini API error:', err);
-    return 'Error connecting to AI. Please check your API key and try again.';
+    return { ok: false, status: 0, error: err.message };
   }
 }
 
-export async function detectIntent(userInput) {
-  const intentPrompt = `Given this user input about elections, classify it into ONE intent:
-  
-  Intents:
-  - voter_registration: How to register to vote
-  - polling_location: Finding polling booth or polling location
-  - voting_process: How to vote or voting day procedures
-  - vote_counting: How votes are counted
-  - election_results: Election results and timelines
-  - timeline: Timeline of election phases
-  - general: General election knowledge
-  
-  User input: "${userInput}"
-  
-  Respond with ONLY the intent name, nothing else.`;
-
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+/**
+ * Main AI response function — cascades through models.
+ */
+export async function getAIResponse(prompt, language = 'English') {
+  const body = {
+    contents: [
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: intentPrompt }],
-            },
-          ],
-        }),
-      }
-    );
+        parts: [
+          {
+            text: `${SYSTEM_PROMPT}\n\nUser message (respond in ${language}):\n${prompt}`,
+          },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 512,
+    },
+  };
 
-    const data = await response.json();
-    const intent = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase() || 'general';
-    return intent;
-  } catch (err) {
-    console.error('Intent detection error:', err);
-    return 'general';
+  let lastError = 'Unknown error';
+
+  for (const model of MODELS) {
+    const result = await tryModel(model, body);
+
+    if (result.ok) {
+      return result.text;
+    }
+
+    lastError = result.error;
+
+    // Only cascade on quota errors; hard-fail on bad key / bad request
+    if (result.status === 400 || result.status === 401 || result.status === 403) {
+      break;
+    }
+
+    // 429 / 500 / network error → try next model
+    console.warn(`[ElectionIQ] Model ${model} failed (${result.status}), trying next…`);
   }
+
+  // All models exhausted
+  console.error('[ElectionIQ] All models failed:', lastError);
+  throw new Error(lastError);
+}
+
+/**
+ * Classify user intent for potential routing/analytics.
+ * Non-critical — always returns a safe default on failure.
+ */
+export async function detectIntent(userInput) {
+  const body = {
+    contents: [
+      {
+        parts: [
+          {
+            text: `Classify this election-related user query into ONE of these intents:
+voter_registration | polling_location | voting_process | vote_counting | election_results | timeline | general
+
+Query: "${userInput}"
+
+Reply with ONLY the intent name.`,
+          },
+        ],
+      },
+    ],
+    generationConfig: { temperature: 0, maxOutputTokens: 20 },
+  };
+
+  for (const model of MODELS) {
+    const result = await tryModel(model, body);
+    if (result.ok) {
+      return result.text.trim().toLowerCase().split(/\s+/)[0] || 'general';
+    }
+    if (result.status === 400 || result.status === 401 || result.status === 403) break;
+  }
+
+  return 'general';
 }

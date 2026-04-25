@@ -7,3 +7,35 @@
 @import './styles/home.css';
 @import './styles/pages.css';
 @import './styles/settings.css';
+
+/* ── App shell ──────────────────────────────────────────────── */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem 1.5rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Chat page has no padding – the component manages its own height */
+.main-content--chat {
+  padding: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.route-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
