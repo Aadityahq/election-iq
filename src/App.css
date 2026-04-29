@@ -7,6 +7,9 @@
 @import './styles/home.css';
 @import './styles/pages.css';
 @import './styles/settings.css';
+@import './styles/badges.css';
+@import './styles/leaderboard.css';
+@import './styles/gamification.css';
 
 /* ── App shell ──────────────────────────────────────────────── */
 .app {

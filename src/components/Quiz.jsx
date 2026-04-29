@@ -46,11 +46,12 @@ function Quiz() {
         setSelectedAnswer(null);
         setShowResult(false);
       } else {
+        const finalScore = score + (optionIndex === questions[currentQuestion].correct ? 1 : 0);
         setQuizComplete(true);
         await saveQuizScore(
           sessionId,
           activeCategory,
-          score + (optionIndex === questions[currentQuestion].correct ? 1 : 0),
+          finalScore,
           questions.length
         );
       }

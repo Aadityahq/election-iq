@@ -181,6 +181,7 @@ function Chat() {
       const userMsg = { id: Date.now(), role: 'user', text: messageText, timestamp: new Date() };
       setMessages((prev) => [...prev, userMsg]);
       saveMessage(sessionId, messageText, 'user').catch(() => {});
+      
       setLoading(true);
 
       try {

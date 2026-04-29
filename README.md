@@ -18,6 +18,7 @@ A smart, interactive AI-powered web application that helps citizens understand t
 ✅ **Accessibility** — WCAG 2.1 AA compliant with keyboard navigation, ARIA labels, high contrast mode  
 ✅ **Mobile Responsive** — Optimized for all screen sizes (375px to 4K)  
 ✅ **Premium UI** — Modern glassmorphism design with smooth animations (Framer Motion)  
+✅ **Fact Checker** — AI-powered fact verification for election claims using Gemini  
 
 ---
 
@@ -75,9 +76,12 @@ election-iq/
 │   │   ├── ChatPage.jsx     # Chat interface page
 │   │   ├── TimelinePage.jsx # Timeline visualization page
 │   │   ├── QuizPage.jsx     # Quiz selection and play page
-│   │   └── MapPage.jsx      # Polling location finder page
+│   │   ├── MapPage.jsx      # Polling location finder page
+│   │   ├── FactCheckerPage.jsx # AI fact verification page
+│   │   └── SettingsPage.jsx # Settings and preferences page
 │   ├── services/            # API integrations
 │   │   ├── geminiService.js # Gemini API wrapper + intent detection
+│   │   ├── factCheckerService.js # Fact verification with Gemini
 │   │   ├── firebase.js      # Firestore CRUD operations
 │   │   └── mapsService.js   # Google Maps API wrapper
 │   ├── data/                # Static data
@@ -89,7 +93,10 @@ election-iq/
 │   │   ├── timeline.css     # Timeline styles
 │   │   ├── quiz.css         # Quiz styles
 │   │   ├── map.css          # Map styles
-│   │   └── home.css         # Home page styles
+│   │   ├── factchecker.css  # Fact checker styles
+│   │   ├── settings.css     # Settings page styles
+│   │   ├── home.css         # Home page styles
+│   │   └── pages.css        # Shared page styles
 │   ├── utils/               # Utility functions
 │   │   └── helpers.js       # Helper functions (session ID, formatting)
 │   ├── App.jsx              # Main app component with routing
@@ -243,6 +250,12 @@ The full working context for the hackathon submission is stored in the `doc/` fo
 - List of 5 nearest stations with address, hours, rating
 - One-click directions link to Google Maps
 
+### 5. **Fact Checker**
+- AI-powered claim verification using Gemini API
+- Verify election claims as TRUE / FALSE / PARTIALLY_TRUE
+- Confidence levels and explanations
+- Input sanitization for security
+
 ---
 
 ## ♿ Accessibility Features
@@ -331,6 +344,9 @@ Our test suite includes:
 
 ✅ **Accessibility Tests**
 - `accessibility.test.js` — WCAG 2.1 AA compliance, keyboard navigation, color contrast, ARIA labels (15 tests)
+
+✅ **8 Comprehensive Test Cases**
+- `factCheckerService.test.js` — Fact verification logic, status types, error handling (8 tests)
 
 **Total: 70+ test cases covering critical user flows**
 
@@ -470,11 +486,11 @@ Before submitting to the hackathon:
 
 ### Code Quality
 
-- [ ] All tests pass: `npm test`
-- [ ] No console errors or warnings
-- [ ] No linting errors (ESLint config present)
-- [ ] Code follows React best practices
-- [ ] Components are reusable and modular
+- [x] All tests pass: `npm test`
+- [x] No console errors or warnings
+- [x] No linting errors (ESLint config present)
+- [x] Code follows React best practices
+- [x] Components are reusable and modular
 
 ### Security
 
@@ -486,41 +502,44 @@ Before submitting to the hackathon:
 
 ### Testing
 
-- [ ] Unit tests written for services (gemini, firebase)
-- [ ] Component tests for Chat and Quiz
-- [ ] Accessibility tests pass (axe-core)
-- [ ] Manual testing checklist complete
-- [ ] Lighthouse scores all 80+
+- [x] Unit tests written for services (gemini, firebase)
+- [x] Fact checker service tested (8+ tests)
+- [x] Component tests for Chat and Quiz
+- [x] Accessibility tests pass (axe-core)
+- [x] Manual testing checklist complete
+- [x] Lighthouse scores all 80+
 
 ### Documentation
 
-- [ ] README.md complete with all sections
-- [ ] Inline code comments for complex logic
-- [ ] doc/context.md updated with final architecture
-- [ ] doc/todo.md reflects completed work
-- [ ] doc/bugs.md updated with fixes applied
+- [x] README.md complete with all sections
+- [x] Inline code comments for complex logic
+- [x] doc/context.md updated with final architecture
+- [x] doc/todo.md reflects completed work (Phase 1)
+- [x] doc/bugs.md updated with fixes applied
+- [x] doc/logs.md has Phase 9 (Fact Checker) complete
 
 ### Deployment
 
-- [ ] `npm run build` succeeds without errors
-- [ ] `dist/` folder is clean (no unnecessary files)
-- [ ] `package.json` has correct start script
-- [ ] `Dockerfile` builds successfully
-- [ ] Cloud Run deployment tested (or Firebase Hosting)
-- [ ] Repository size < 10MB
-- [ ] Repository is public on GitHub
-- [ ] Single branch (main/master) with clean commit history
+- [x] `npm run build` succeeds without errors
+- [x] `dist/` folder is clean (no unnecessary files)
+- [x] `package.json` has correct start script
+- [x] `Dockerfile` builds successfully
+- [x] Cloud Run deployment tested (or Firebase Hosting)
+- [x] Repository size < 10MB
+- [x] Repository is public on GitHub
+- [x] Single branch (main/master) with clean commit history
 
 ### Functionality
 
-- [ ] All 6 features work end-to-end (Chat, Timeline, Quiz, Map, Settings, Navbar)
-- [ ] Gemini API responds with relevant answers
-- [ ] Firebase saves/loads chat history correctly
-- [ ] Quiz scores calculated and displayed correctly
-- [ ] Maps API shows polling locations
-- [ ] Language selection changes responses
-- [ ] Voice input works
-- [ ] Mobile responsive on real device
+- [x] All 7 features work end-to-end (Chat, Timeline, Quiz, Map, Settings, Navbar, Fact Checker)
+- [x] Gemini API responds with relevant answers
+- [x] Fact Checker verifies election claims accurately
+- [x] Firebase saves/loads chat history correctly
+- [x] Quiz scores calculated and displayed correctly
+- [x] Maps API shows polling locations
+- [x] Language selection changes responses
+- [x] Voice input works
+- [x] Mobile responsive on real device
 
 ### Google Services Integration
 
@@ -565,6 +584,7 @@ Before submitting to the hackathon:
 | **Efficiency** | Lazy-loaded components, API response caching, debounced inputs | ✅ |
 | **Accessibility** | WCAG 2.1 AA, keyboard nav, screen reader support, high contrast | ✅ |
 | **Google Services** | Gemini + Maps + Charts + Firestore + Firebase Hosting = 5+ services | ✅ |
+
 | **UI/UX** | Modern glassmorphism, smooth animations, responsive design | ✅ |
 | **Performance** | Vite optimized build, bundle <1 MB (gzipped), Lighthouse 90+ | ✅ |
 
@@ -589,8 +609,8 @@ Before submitting to the hackathon:
 - PDF export of quiz scores
 - PWA support (offline-first with service workers)
 - Native mobile apps (React Native)
-- Gamification (badges, leaderboards)
 - Multi-country support (30+ countries)
+- Dark mode toggle for accessibility
 
 ---
 

@@ -27,8 +27,11 @@
 ## Smart Features
 - [x] Improve the system prompt
 - [x] Add intent detection logic
-- [ ] Restore chat history on app reload
+- [x] Restore chat history on app reload (Phase 1)
 - [ ] Route chat prompts from timeline and feature cards into the assistant automatically
+- [x] Add AI-powered fact checker for election claims (Phase 1)
+- [ ] Add gamification system (badges and leaderboard) - Phase 2 (optional future)
+- [ ] Add dark mode toggle - Phase 3 (future)
 
 ## Security & Optimization
 - [x] Move API keys to `.env.local`
@@ -39,10 +42,15 @@
 - [ ] Add stricter runtime validation for missing keys in the UI
 
 ## Testing
-- [ ] Add unit tests for chat, quiz, and service logic
+- [x] Add unit tests for services (gemini, firebase, helpers) - Phase 1
+- [x] Add unit tests for fact checker service (8+ tests) - Phase 1
+- [ ] Add unit tests for gamification service (optional)
+- [x] Add component tests for Chat and Quiz - Phase 1
+- [x] Add accessibility tests (WCAG 2.1 AA compliance) - Phase 1
+- [x] Add 70+ comprehensive test cases covering critical paths - Phase 1
 - [ ] Add smoke tests for map and timeline pages
-- [ ] Add accessibility test pass with axe or similar
 - [ ] Add a production smoke checklist for Cloud Run
+- [ ] Add integration tests for future features
 
 ## Deployment
 - [ ] Complete Cloud Run deployment for final submission
@@ -52,4 +60,11 @@
 
 ## Documentation
 - [x] Add docs folder with context, logs, todo, and bugs
+- [x] Update logs.md with Phase 9 (Fact Checker) implementation - Phase 1
+- [x] Update todo.md with completed Phase 1 items - Phase 1
+- [x] Update bugs.md with Phase 1 status - Phase 1
+- [x] Create comprehensive documentation for fact checker feature - Phase 1
 - [ ] Sync the root README with the latest Cloud Run deployment notes
+- [ ] Add Phase 2 (Gamification) planning to docs
+- [ ] Add Phase 3 (Dark Mode) planning to docs
+- [ ] Final submission documentation and checklist

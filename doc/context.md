@@ -49,6 +49,7 @@ Frontend:
 
 Services:
 - Google Gemini API for AI responses and intent detection
+- Google Gemini API for fact-checking election claims
 - Google Maps API for polling location discovery
 - Google Charts for timeline visualization
 - Web Speech API for voice input
@@ -64,19 +65,24 @@ Deployment:
 2. Election timeline with phase cards and Google Charts visualization
 3. Polling booth finder with geolocation and manual location fallback
 4. Quiz module with topic selection, scoring, and explanation feedback
-5. Accessibility settings for high contrast and large text
-6. Responsive premium UI with shared SVG icons
+5. **Fact Checker** — AI-powered election claim verification (TRUE/FALSE/PARTIALLY_TRUE) with confidence levels
+6. Accessibility settings for high contrast and large text
+7. Responsive premium UI with shared SVG icons
 
 ## Current Architecture Notes
 - `src/App.jsx` uses route-level lazy loading with a Suspense fallback
-- `src/services/geminiService.js` centralizes AI prompts and intent detection
+- `src/services/geminiService.js` centralizes AI prompts and intent detection for chat
+- `src/services/factCheckerService.js` handles fact verification with Gemini API and response parsing
 - `src/services/firebase.js` handles Firestore reads, writes, and analytics init
 - `src/services/mapsService.js` loads Google Maps and queries nearby polling places
 - `server.js` serves the production `dist/` bundle on port `8080` for Cloud Run
+- All services follow the same error handling and fallback patterns for reliability
 
 ## Why It Matters
 - Promotes civic awareness
 - Makes election education less intimidating
 - Combines AI and real-world data
+- **Combats voter misinformation** with fact-checking tool
+- **Helps voters verify claims** before voting decisions
 - Feels like a complete product, not just a chatbot
 - Has a deployment story that fits hackathon submission requirements

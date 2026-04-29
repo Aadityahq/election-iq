@@ -14,6 +14,7 @@ function Navbar() {
     { path: '/timeline', label: 'Timeline', icon: 'timeline' },
     { path: '/quiz', label: 'Quiz', icon: 'quiz' },
     { path: '/map', label: 'Polling', icon: 'map' },
+    { path: '/fact-checker', label: 'Fact Check', icon: 'search' },
     { path: '/settings', label: 'Settings', icon: 'settings' },
   ];
 
