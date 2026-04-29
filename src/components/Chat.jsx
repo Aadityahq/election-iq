@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAIResponse } from '../services/geminiService';
-import { saveMessage } from '../services/firebase';
+import { saveMessage, getMessages } from '../services/firebase';
 import { generateSessionId } from '../utils/helpers';
 import UiIcon from './UiIcon';
 import '../styles/chat.css';
@@ -132,6 +132,38 @@ function Chat() {
   const [sessionId] = useState(() => generateSessionId());
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+  // Load chat history on component mount
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      try {
+        const savedMessages = await getMessages(sessionId);
+        if (savedMessages && savedMessages.length > 0) {
+          // Convert saved messages to component format
+          const formattedMessages = savedMessages.map((msg, idx) => ({
+            id: idx,
+            role: msg.sender === 'user' ? 'user' : 'bot',
+            text: msg.message,
+            timestamp: msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp),
+          }));
+          
+          // Preserve initial greeting and append history
+          setMessages((prev) => {
+            const initialGreeting = prev[0];
+            return [initialGreeting, ...formattedMessages];
+          });
+        }
+      } catch (err) {
+        console.error('[Chat] Error loading history:', err);
+        // Continue without history if load fails
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    loadChatHistory();
+  }, [sessionId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
