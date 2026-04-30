@@ -152,6 +152,21 @@
   color: white;
 }
 
+.map-placeholder {
+  width: 100%;
+  height: 400px;
+  background: linear-gradient(135deg, #e0f2fe 0%, #bfdbfe 100%);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .map-container { padding: 1rem; }
   .manual-search { grid-template-columns: 1fr; }
