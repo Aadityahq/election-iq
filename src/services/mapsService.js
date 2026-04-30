@@ -2,7 +2,7 @@ import { getEnv } from './env';
 
 const MAPS_API_KEY = getEnv('VITE_GOOGLE_MAPS_API_KEY');
 
-let mapsLoaded = false;
+let mapsLoadPromise = null;
 
 export async function loadMapsAPI() {
   if (!MAPS_API_KEY || MAPS_API_KEY.includes('your_')) {
@@ -10,23 +10,37 @@ export async function loadMapsAPI() {
     return;
   }
 
-  if (mapsLoaded) return;
+  // Already loaded
+  if (window.google?.maps) return;
 
-  return new Promise((resolve, reject) => {
+  // Already loading — reuse the same promise to avoid duplicate script injection
+  if (mapsLoadPromise) return mapsLoadPromise;
+
+  mapsLoadPromise = new Promise((resolve, reject) => {
+    // Check if script tag already exists (e.g. from HMR)
+    const existing = document.querySelector(`script[src*="maps.googleapis.com"]`);
+    if (existing) {
+      existing.addEventListener('load', resolve);
+      return;
+    }
+
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_API_KEY}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_API_KEY}&libraries=places&loading=async`;
     script.async = true;
-    script.onload = () => {
-      mapsLoaded = true;
-      resolve();
+    script.defer = true;
+    script.onload = resolve;
+    script.onerror = () => {
+      mapsLoadPromise = null;
+      reject(new Error('Failed to load Google Maps API'));
     };
-    script.onerror = () => reject(new Error('Failed to load Google Maps API'));
     document.body.appendChild(script);
   });
+
+  return mapsLoadPromise;
 }
 
 export async function getNearbyPollingStations(lat, lng) {
-  if (!mapsLoaded) await loadMapsAPI();
+  if (!window.google?.maps) await loadMapsAPI();
 
   return new Promise((resolve, reject) => {
     const service = new window.google.maps.places.PlacesService(

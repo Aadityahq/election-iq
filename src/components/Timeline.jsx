@@ -1,17 +1,29 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { electionPhases } from '../data/quizData';
-import UiIcon from './UiIcon';
+import {
+  Clock,
+  ClipboardCheck,
+  Users,
+  Vote,
+  BarChart3,
+  Award,
+  Shield,
+  CheckCircle,
+  TrendingUp,
+} from 'lucide-react';
 import '../styles/timeline.css';
 
 const PHASE_COLORS = [
-  { from: '#6366f1', to: '#8b5cf6', glow: 'rgba(99,102,241,0.4)' },
-  { from: '#ec4899', to: '#f43f5e', glow: 'rgba(236,72,153,0.4)' },
-  { from: '#f59e0b', to: '#f97316', glow: 'rgba(245,158,11,0.4)' },
-  { from: '#22d3ee', to: '#06b6d4', glow: 'rgba(34,211,238,0.4)' },
-  { from: '#22c55e', to: '#10b981', glow: 'rgba(34,197,94,0.4)' },
-  { from: '#a78bfa', to: '#818cf8', glow: 'rgba(167,139,250,0.4)' },
+  { from: '#2563eb', to: '#3b82f6', glow: 'rgba(37,99,235,0.25)' },
+  { from: '#0ea5e9', to: '#38bdf8', glow: 'rgba(14,165,233,0.25)' },
+  { from: '#6366f1', to: '#818cf8', glow: 'rgba(99,102,241,0.25)' },
+  { from: '#0891b2', to: '#22d3ee', glow: 'rgba(8,145,178,0.25)' },
+  { from: '#1d4ed8', to: '#60a5fa', glow: 'rgba(29,78,216,0.25)' },
+  { from: '#7c3aed', to: '#a78bfa', glow: 'rgba(124,58,237,0.25)' },
 ];
+
+const PHASE_ICONS = [ClipboardCheck, Users, Vote, BarChart3, Award, CheckCircle];
 
 const PHASE_DATES = [
   'Jan – Mar 2024',
@@ -49,7 +61,7 @@ function Timeline() {
         transition={{ duration: 0.5 }}
       >
         <div className="timeline-hero-icon">
-          <UiIcon name="timeline" size={28} />
+          <Clock size={26} strokeWidth={1.8} />
         </div>
         <div>
           <h1 className="timeline-title">Election Timeline</h1>
@@ -121,7 +133,7 @@ function Timeline() {
                 aria-expanded={isActive}
                 aria-label={`Phase ${idx + 1}: ${phase.name}`}
               >
-                <UiIcon name={phase.icon} size={20} />
+              {React.createElement(PHASE_ICONS[idx % PHASE_ICONS.length], { size: 20, strokeWidth: 1.8 })}
               </button>
 
               {/* ── Card ── */}
@@ -146,7 +158,7 @@ function Timeline() {
                     </div>
                     <div className="stepper-card-meta">
                       <div className="meta-chip meta-chip--duration">
-                        <UiIcon name="timeline" size={13} />
+                        <Clock size={13} strokeWidth={2} />
                         {phase.duration}
                       </div>
                       <div className="meta-chip meta-chip--date">
@@ -199,8 +211,8 @@ function Timeline() {
         transition={{ delay: 0.9, duration: 0.4 }}
       >
         <div className="info-card">
-          <div className="info-card-icon" style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1' }}>
-            <UiIcon name="shield" size={20} />
+          <div className="info-card-icon" style={{ background: 'rgba(37,99,235,0.08)', color: '#2563eb' }}>
+            <Shield size={20} strokeWidth={1.8} />
           </div>
           <div>
             <h4>Free &amp; Fair</h4>
@@ -208,8 +220,8 @@ function Timeline() {
           </div>
         </div>
         <div className="info-card">
-          <div className="info-card-icon" style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
-            <UiIcon name="voting" size={20} />
+          <div className="info-card-icon" style={{ background: 'rgba(22,163,74,0.08)', color: '#16a34a' }}>
+            <CheckCircle size={20} strokeWidth={1.8} />
           </div>
           <div>
             <h4>Your Vote Matters</h4>
@@ -217,8 +229,8 @@ function Timeline() {
           </div>
         </div>
         <div className="info-card">
-          <div className="info-card-icon" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
-            <UiIcon name="results" size={20} />
+          <div className="info-card-icon" style={{ background: 'rgba(217,119,6,0.08)', color: '#d97706' }}>
+            <TrendingUp size={20} strokeWidth={1.8} />
           </div>
           <div>
             <h4>Technology-Backed</h4>

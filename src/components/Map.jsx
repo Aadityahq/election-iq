@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getNearbyPollingStations, getDirectionsLink, loadMapsAPI } from '../services/mapsService';
-import UiIcon from './UiIcon';
+import { MapPin, Navigation, ArrowRight } from 'lucide-react';
 import '../styles/map.css';
 
 function Map() {
@@ -10,6 +10,7 @@ function Map() {
   const [error, setError] = useState('');
   const [userLocation, setUserLocation] = useState(null);
   const [manualLocation, setManualLocation] = useState('');
+  const mapRef = useRef(null);
 
   useEffect(() => {
     const initMap = async () => {
@@ -26,23 +27,27 @@ function Map() {
               const { latitude, longitude } = position.coords;
               setUserLocation({ lat: latitude, lng: longitude });
 
+              const mapEl = mapRef.current || document.getElementById('map');
+              if (!mapEl) {
+                setError('Map element not ready. Please refresh.');
+                return;
+              }
+
               const googleMap = new window.google.maps.Map(
-                document.getElementById('map'),
+                mapEl,
                 {
                   zoom: 13,
                   center: { lat: latitude, lng: longitude },
                   styles: [
                     {
+                      featureType: 'water',
                       elementType: 'geometry',
-                      stylers: [{ color: '#1e293b' }],
+                      stylers: [{ color: '#dbeafe' }],
                     },
                     {
-                      elementType: 'labels.text.stroke',
-                      stylers: [{ color: '#1e293b' }],
-                    },
-                    {
-                      elementType: 'labels.text.fill',
-                      stylers: [{ color: '#ffffff' }],
+                      featureType: 'landscape',
+                      elementType: 'geometry',
+                      stylers: [{ color: '#f1f5f9' }],
                     },
                   ],
                 }
@@ -141,7 +146,7 @@ function Map() {
   return (
     <div className="map-container">
       <h2>
-        <UiIcon name="map" size={20} />
+        <MapPin size={22} strokeWidth={1.8} />
         <span>Find Polling Stations</span>
       </h2>
 
@@ -161,7 +166,7 @@ function Map() {
       
       {error && <div className="error-message">{error}</div>}
 
-      <div id="map" className="map-element" role="region" aria-label="Polling stations map"></div>
+      <div id="map" ref={mapRef} className="map-element" role="region" aria-label="Polling stations map"></div>
 
       <div className="stations-list">
         <h3>Nearby Polling Stations ({stations.length})</h3>
@@ -175,7 +180,7 @@ function Map() {
         {stations.map((station, idx) => (
           <div key={idx} className="station-card">
             <h4>
-              <UiIcon name="polling" size={16} />
+              <MapPin size={16} strokeWidth={1.8} />
               <span>{station.name}</span>
             </h4>
             <p className="address">{station.vicinity}</p>
@@ -191,7 +196,7 @@ function Map() {
               rel="noopener noreferrer"
               className="directions-link"
             >
-              <UiIcon name="arrowRight" size={16} />
+              <Navigation size={14} strokeWidth={1.8} />
               Get Directions →
             </a>
           </div>

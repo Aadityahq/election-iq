@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   Timeline Page
+   Timeline Page — White & Blue Theme
    ═══════════════════════════════════════════════ */
 
 .timeline-page {
@@ -17,33 +17,31 @@
 }
 
 .timeline-hero-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+  box-shadow: var(--shadow-blue);
   color: white;
 }
 
 .timeline-title {
   font-size: 2rem;
   font-weight: 800;
-  margin: 0 0 0.35rem;
-  background: linear-gradient(135deg, #e0e7ff, #a5b4fc);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin: 0 0 0.3rem;
+  color: var(--text-primary);
   line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .timeline-subtitle {
   color: var(--text-secondary);
   font-size: 0.95rem;
-  line-height: 1.6;
+  line-height: 1.55;
   margin: 0;
 }
 
@@ -53,11 +51,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 3rem;
+  margin-bottom: 2.5rem;
   padding: 1.25rem 1.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .progress-track {
@@ -66,7 +65,7 @@
   left: 2.5rem;
   right: 2.5rem;
   height: 2px;
-  background: var(--border-color);
+  background: var(--border);
   transform: translateY(-50%);
   z-index: 0;
 }
@@ -85,31 +84,28 @@
   transition: transform 0.2s ease;
 }
 
-.progress-step:hover {
-  transform: translateY(-2px);
-}
+.progress-step:hover { transform: translateY(-2px); }
 
 .progress-dot {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--border-color);
-  border: 2px solid var(--bg-dark);
+  background: var(--border);
+  border: 2px solid var(--bg-page);
   transition: all 0.25s ease;
 }
 
 .progress-step.active .progress-dot,
 .progress-step:hover .progress-dot {
-  background: var(--step-color);
-  box-shadow: 0 0 12px var(--step-color);
-  transform: scale(1.3);
+  background: var(--step-color, var(--primary));
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+  transform: scale(1.2);
 }
 
 .progress-label {
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--text-secondary);
-  transition: color 0.25s ease;
+  color: var(--text-muted);
 }
 
 .progress-step.active .progress-label,
@@ -121,14 +117,13 @@
 .phases-stepper {
   display: flex;
   flex-direction: column;
-  gap: 0;
 }
 
 .stepper-item {
   display: flex;
   gap: 1.25rem;
   position: relative;
-  padding-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
 }
 
 .stepper-connector {
@@ -137,12 +132,11 @@
   top: 44px;
   bottom: 0;
   width: 2px;
-  background: linear-gradient(to bottom, var(--line-color, var(--border-color)), transparent);
-  opacity: 0.4;
+  background: var(--border);
   z-index: 0;
 }
 
-/* ── Step node (circle with icon) ─────────────── */
+/* ── Step node ────────────────────────────────── */
 .stepper-node {
   position: relative;
   z-index: 1;
@@ -157,16 +151,11 @@
   cursor: pointer;
   flex-shrink: 0;
   margin-top: 0.5rem;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: all 0.25s ease;
 }
 
-.stepper-node:hover {
-  transform: scale(1.12);
-}
-
-.stepper-item--active .stepper-node {
-  transform: scale(1.15);
-}
+.stepper-node:hover { transform: scale(1.1); }
+.stepper-item--active .stepper-node { transform: scale(1.12); }
 
 /* ── Card ─────────────────────────────────────── */
 .stepper-card-wrap {
@@ -178,46 +167,42 @@
   position: relative;
   width: 100%;
   text-align: left;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 1.125rem 1.25rem;
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
   cursor: pointer;
   transition: all 0.25s ease;
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
   color: var(--text-primary);
-  overflow: visible;
 }
 
 .stepper-card:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: var(--card-color, var(--primary-color));
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border-color: var(--primary-200);
+  box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
 
 .stepper-card--active {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--card-color, var(--primary-color));
+  border-color: var(--primary-200);
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .phase-badge {
   position: absolute;
-  top: -10px;
+  top: -9px;
   left: 1rem;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: white;
-  padding: 0.15rem 0.6rem;
-  border-radius: 20px;
-  white-space: nowrap;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-full);
 }
 
 .stepper-card-top {
@@ -228,16 +213,12 @@
   align-items: flex-start;
 }
 
-.stepper-card-text {
-  flex: 1;
-  min-width: 0;
-}
+.stepper-card-text { flex: 1; min-width: 0; }
 
 .stepper-card-title {
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
   margin: 0 0 0.2rem;
-  color: var(--text-primary);
 }
 
 .stepper-card-desc {
@@ -250,7 +231,7 @@
 .stepper-card-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.3rem;
   align-items: flex-end;
   flex-shrink: 0;
 }
@@ -261,51 +242,44 @@
   gap: 0.3rem;
   font-size: 0.7rem;
   font-weight: 600;
-  padding: 0.25rem 0.6rem;
-  border-radius: 20px;
+  padding: 0.22rem 0.55rem;
+  border-radius: var(--radius-full);
   white-space: nowrap;
 }
 
 .meta-chip--duration {
-  background: rgba(99, 102, 241, 0.12);
-  color: #a5b4fc;
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: var(--primary-lighter);
+  color: var(--primary);
+  border: 1px solid var(--primary-200);
 }
 
 .meta-chip--date {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-subtle);
   color: var(--text-secondary);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
 }
 
 .stepper-expand-icon {
-  font-size: 1rem;
-  color: var(--text-secondary);
+  font-size: 0.9rem;
+  color: var(--text-muted);
   flex-shrink: 0;
   align-self: center;
 }
 
 /* ── Expanded details ─────────────────────────── */
-.stepper-details {
-  /* height animated via framer */
-}
-
 .stepper-details-inner {
   padding: 1rem 1.25rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-color);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
   border-top: none;
-  border-radius: 0 0 14px 14px;
-  border-left-color: var(--card-color, var(--primary-color));
-  border-left-width: 3px;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  border-left: 3px solid var(--primary);
   color: var(--text-secondary);
   font-size: 0.9rem;
   line-height: 1.7;
 }
 
-.stepper-details-inner p {
-  margin: 0;
-}
+.stepper-details-inner p { margin: 0; }
 
 /* ── Info row ─────────────────────────────────── */
 .timeline-info-row {
@@ -318,25 +292,24 @@
 .info-card {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 0.875rem;
   padding: 1.25rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   transition: all 0.25s ease;
 }
 
 .info-card:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: var(--primary-color);
+  border-color: var(--primary-200);
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .info-card-icon {
   width: 42px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -344,10 +317,9 @@
 }
 
 .info-card h4 {
-  font-size: 0.95rem;
+  font-size: 0.925rem;
   font-weight: 700;
-  margin: 0 0 0.3rem;
-  color: var(--text-primary);
+  margin: 0 0 0.25rem;
 }
 
 .info-card p {
@@ -364,26 +336,9 @@
     gap: 0.875rem;
     margin-bottom: 1.75rem;
   }
-
-  .timeline-title {
-    font-size: 1.5rem;
-  }
-
-  .timeline-progress-bar {
-    display: none; /* too cramped on small screens */
-  }
-
-  .stepper-card-top {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .stepper-card-meta {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .info-card {
-    padding: 1rem;
-  }
+  .timeline-title { font-size: 1.5rem; }
+  .timeline-progress-bar { display: none; }
+  .stepper-card-top { flex-direction: column; gap: 0.5rem; }
+  .stepper-card-meta { flex-direction: row; align-items: center; }
+  .info-card { padding: 1rem; }
 }

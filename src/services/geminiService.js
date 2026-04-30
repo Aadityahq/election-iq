@@ -128,3 +128,62 @@ Reply with ONLY the intent name.`,
 
   return 'general';
 }
+
+/**
+ * Fact-check an election-related claim using AI.
+ * Returns { verdict, explanation, keyFacts, confidence, claim }.
+ */
+export async function factCheckClaim(claim) {
+  const FACT_CHECK_PROMPT = `You are a neutral, evidence-based election fact-checker.
+Analyze the following claim about elections and return a JSON object with EXACTLY these fields:
+- "verdict": one of "true", "mostly_true", "partially_true", "misleading", "false", "unverifiable"
+- "explanation": a clear 2-4 sentence analysis explaining why the verdict was given
+- "keyFacts": an array of 2-4 short factual bullet points that support or refute the claim
+- "confidence": a number from 0-100 representing how confident you are
+- "claim": the original claim restated
+
+Rules:
+- Be objective and politically neutral
+- Focus on verifiable election facts, processes, laws, and institutions
+- If the claim is not about elections, set verdict to "unverifiable" and explain why
+- Return ONLY valid JSON, no markdown, no extra text
+
+Claim: "${claim}"`;
+
+  const body = {
+    contents: [{ parts: [{ text: FACT_CHECK_PROMPT }] }],
+    generationConfig: { temperature: 0.2, maxOutputTokens: 800 },
+  };
+
+  let lastError = 'Unknown error';
+
+  for (const model of MODELS) {
+    const result = await tryModel(model, body);
+
+    if (result.ok) {
+      try {
+        // Strip any markdown code fences the model may add
+        const cleaned = result.text
+          .replace(/```json\s*/gi, '')
+          .replace(/```\s*/g, '')
+          .trim();
+        return JSON.parse(cleaned);
+      } catch {
+        // If parsing fails, return a structured fallback
+        return {
+          verdict: 'unverifiable',
+          explanation: result.text,
+          keyFacts: [],
+          confidence: 50,
+          claim,
+        };
+      }
+    }
+
+    lastError = result.error;
+    if (result.status === 400 || result.status === 401 || result.status === 403) break;
+    console.warn(`[FactCheck] Model ${model} failed (${result.status}), trying next…`);
+  }
+
+  throw new Error(lastError);
+}

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { quizQuestions } from '../data/quizData';
 import { saveQuizScore } from '../services/firebase';
 import { generateSessionId } from '../utils/helpers';
-import UiIcon from './UiIcon';
+import { ClipboardCheck, CheckCircle, BarChart3, Award } from 'lucide-react';
 import '../styles/quiz.css';
 
 function Quiz() {
@@ -16,10 +16,10 @@ function Quiz() {
   const [quizComplete, setQuizComplete] = useState(false);
 
   const categories = [
-    { key: 'voter_registration', name: 'Voter Registration', icon: 'registration' },
-    { key: 'voting_process', name: 'Voting Process', icon: 'voting' },
-    { key: 'vote_counting', name: 'Vote Counting', icon: 'counting' },
-    { key: 'election_results', name: 'Election Results', icon: 'results' },
+    { key: 'voter_registration', name: 'Voter Registration', Icon: ClipboardCheck },
+    { key: 'voting_process', name: 'Voting Process', Icon: CheckCircle },
+    { key: 'vote_counting', name: 'Vote Counting', Icon: BarChart3 },
+    { key: 'election_results', name: 'Election Results', Icon: Award },
   ];
 
   const startQuiz = (category) => {
@@ -65,23 +65,26 @@ function Quiz() {
         <p className="quiz-intro">Test your knowledge about elections!</p>
         
         <div className="categories-grid">
-          {categories.map((cat) => (
-            <motion.button
-              key={cat.key}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => startQuiz(cat.key)}
-              className="category-btn"
-            >
-              <span className="cat-icon">
-                <UiIcon name={cat.icon} size={24} />
-              </span>
-              <span className="cat-name">{cat.name}</span>
-              <span className="cat-questions">
-                {quizQuestions[cat.key].length} Questions
-              </span>
-            </motion.button>
-          ))}
+          {categories.map((cat) => {
+            const CatIcon = cat.Icon;
+            return (
+              <motion.button
+                key={cat.key}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => startQuiz(cat.key)}
+                className="category-btn"
+              >
+                <span className="cat-icon">
+                  <CatIcon size={24} strokeWidth={1.8} />
+                </span>
+                <span className="cat-name">{cat.name}</span>
+                <span className="cat-questions">
+                  {quizQuestions[cat.key].length} Questions
+                </span>
+              </motion.button>
+            );
+          })}
         </div>
       </div>
     );

@@ -1,36 +1,50 @@
 .settings-page {
-  max-width: 760px;
+  max-width: 640px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.5rem 1rem;
 }
 
 .settings-page h1 {
-  font-size: 2rem;
+  font-size: 1.75rem;
+  font-weight: 800;
   margin-bottom: 0.25rem;
+  letter-spacing: -0.02em;
 }
 
 .settings-subtitle {
   color: var(--text-secondary);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
+  font-size: 0.95rem;
 }
 
 .settings-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 1rem;
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
   margin-bottom: 1rem;
+  box-shadow: var(--shadow-xs);
+  transition: all 0.25s;
+}
+
+.settings-card:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--primary-200);
 }
 
 .settings-card h2 {
   margin-bottom: 0.75rem;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .settings-card label {
   display: block;
   margin-bottom: 0.5rem;
   color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .settings-card select {
@@ -42,22 +56,57 @@
   align-items: center;
   justify-content: space-between;
   margin-top: 0.75rem;
-  padding: 0.6rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border-light);
 }
 
-.toggle-row input {
+.toggle-row span {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.toggle-row input[type="checkbox"] {
+  width: 40px;
+  height: 22px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--border);
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.3s;
+  border: none;
+  padding: 0;
+}
+
+.toggle-row input[type="checkbox"]::after {
+  content: '';
+  position: absolute;
   width: 18px;
   height: 18px;
+  border-radius: 50%;
+  background: white;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.3s cubic-bezier(0.25,0.1,0.25,1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.toggle-row input[type="checkbox"]:checked {
+  background: var(--primary);
+}
+
+.toggle-row input[type="checkbox"]:checked::after {
+  transform: translateX(18px);
 }
 
 body.high-contrast {
-  --bg-dark: #000000;
-  --bg-darker: #050505;
-  --bg-light: #101010;
-  --text-primary: #ffffff;
-  --text-secondary: #e5e7eb;
-  --border-color: #ffffff;
+  --bg-page: #f0f0f0;
+  --bg-white: #ffffff;
+  --bg-subtle: #e5e5e5;
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --border: #000000;
 }
 
 body.large-text {

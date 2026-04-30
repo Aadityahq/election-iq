@@ -3,7 +3,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getAIResponse } from '../services/geminiService';
 import { saveMessage, getMessages } from '../services/firebase';
 import { generateSessionId } from '../utils/helpers';
-import UiIcon from './UiIcon';
+import {
+  Shield,
+  ClipboardCheck,
+  CheckCircle,
+  BarChart3,
+  Clock,
+  Send,
+  Mic,
+  ArrowRight,
+  Paperclip,
+  X,
+  FileText,
+  Image as ImageIcon,
+} from 'lucide-react';
 import '../styles/chat.css';
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -104,11 +117,11 @@ const INITIAL_MESSAGES = [
 ];
 
 const QUICK_ACTIONS = [
-  { label: 'Register to vote', icon: 'registration', query: 'How do I register to vote in India?' },
-  { label: 'Voting day', icon: 'voting', query: 'What happens on voting day?' },
-  { label: 'Vote counting', icon: 'counting', query: 'How are votes counted in India?' },
-  { label: 'Election timeline', icon: 'timeline', query: 'Explain the election timeline step by step.' },
-  { label: 'EVM & VVPAT', icon: 'shield', query: 'What is an EVM and VVPAT?' },
+  { label: 'Register to vote', Icon: ClipboardCheck, query: 'How do I register to vote in India?' },
+  { label: 'Voting day', Icon: CheckCircle, query: 'What happens on voting day?' },
+  { label: 'Vote counting', Icon: BarChart3, query: 'How are votes counted in India?' },
+  { label: 'Election timeline', Icon: Clock, query: 'Explain the election timeline step by step.' },
+  { label: 'EVM & VVPAT', Icon: Shield, query: 'What is an EVM and VVPAT?' },
 ];
 
 const LANG_MAP = {
@@ -130,8 +143,10 @@ function Chat() {
   const [language, setLanguage] = useState('English');
   const [isListening, setIsListening] = useState(false);
   const [sessionId] = useState(() => generateSessionId());
+  const [attachedFiles, setAttachedFiles] = useState([]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   // Load chat history on component mount
@@ -169,23 +184,84 @@ function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  /* ── File handling ──────────────────────────────────────── */
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/webp',
+      'application/pdf', 'text/plain', 'text/csv',
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
+    const validFiles = files.filter(f => {
+      if (!allowed.includes(f.type)) {
+        setErrorBanner(`⚠️ ${f.name}: Unsupported file type. Use images, PDF, TXT, CSV, or DOC.`);
+        return false;
+      }
+      if (f.size > maxSize) {
+        setErrorBanner(`⚠️ ${f.name}: File too large (max 5MB).`);
+        return false;
+      }
+      return true;
+    });
+
+    setAttachedFiles(prev => [...prev, ...validFiles].slice(0, 3)); // max 3 files
+    e.target.value = ''; // reset input
+  };
+
+  const removeFile = (idx) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const getFilePreviewIcon = (file) => {
+    if (file.type.startsWith('image/')) return ImageIcon;
+    return FileText;
+  };
+
   const sendMessage = useCallback(
     async (overrideText) => {
       const messageText = (overrideText ?? input).replace(/[<>]/g, '').trim();
-      if (!messageText || loading) return;
+      if ((!messageText && !attachedFiles.length) || loading) return;
 
       setErrorBanner('');
       setLastFailedQuery(null);
       setInput('');
 
-      const userMsg = { id: Date.now(), role: 'user', text: messageText, timestamp: new Date() };
+      // Build user message with file info
+      const fileNames = attachedFiles.map(f => f.name);
+      const displayText = fileNames.length
+        ? `${messageText || 'Attached files'}\n📎 ${fileNames.join(', ')}`
+        : messageText;
+
+      const userMsg = {
+        id: Date.now(),
+        role: 'user',
+        text: displayText,
+        files: attachedFiles.map(f => ({ name: f.name, type: f.type, size: f.size })),
+        timestamp: new Date(),
+      };
       setMessages((prev) => [...prev, userMsg]);
-      saveMessage(sessionId, messageText, 'user').catch(() => {});
-      
+      saveMessage(sessionId, displayText, 'user').catch(() => {});
+
+      // Build context string for AI including file contents
+      let contextText = messageText;
+      for (const file of attachedFiles) {
+        if (file.type.startsWith('text/') || file.type === 'application/pdf') {
+          try {
+            const text = await file.text();
+            contextText += `\n\n[Attached file: ${file.name}]\n${text.slice(0, 2000)}`;
+          } catch { /* skip unreadable files */ }
+        } else if (file.type.startsWith('image/')) {
+          contextText += `\n\n[User attached an image: ${file.name}]`;
+        }
+      }
+
+      setAttachedFiles([]);
       setLoading(true);
 
       try {
-        const reply = await getAIResponse(messageText, language);
+        const reply = await getAIResponse(contextText, language);
         const botMsg = { id: Date.now() + 1, role: 'bot', text: reply, timestamp: new Date() };
         setMessages((prev) => [...prev, botMsg]);
         saveMessage(sessionId, reply, 'bot').catch(() => {});
@@ -215,7 +291,7 @@ function Chat() {
         inputRef.current?.focus();
       }
     },
-    [input, loading, language, sessionId]
+    [input, loading, language, sessionId, attachedFiles]
   );
 
   const retryLast = () => {
@@ -263,7 +339,7 @@ function Chat() {
         <div className="chat-header">
           <div className="chat-header-left">
             <div className="bot-avatar">
-              <UiIcon name="shield" size={18} />
+              <Shield size={18} strokeWidth={2} />
             </div>
             <div className="chat-header-info">
               <h2>ElectionIQ</h2>
@@ -330,7 +406,7 @@ function Chat() {
               >
                 {msg.role === 'bot' && (
                   <div className="msg-avatar bot-msg-avatar">
-                    <UiIcon name="shield" size={14} />
+                    <Shield size={14} strokeWidth={2} />
                   </div>
                 )}
 
@@ -359,7 +435,7 @@ function Chat() {
               className="message bot"
             >
               <div className="msg-avatar bot-msg-avatar">
-                <UiIcon name="shield" size={14} />
+                <Shield size={14} strokeWidth={2} />
               </div>
               <div className="message-content">
                 <div className="typing-indicator">
@@ -374,23 +450,77 @@ function Chat() {
         {/* ── Quick actions ──────────────────────────────────── */}
         <div className="quick-actions" aria-label="Suggested questions">
           <span className="quick-actions-label">Quick questions</span>
-          {QUICK_ACTIONS.map((action) => (
-            <button
-              key={action.label}
-              onClick={() => sendMessage(action.query)}
-              className="action-btn"
-              disabled={loading}
-              aria-label={`Ask: ${action.query}`}
-            >
-              <UiIcon name={action.icon} size={14} />
-              {action.label}
-            </button>
-          ))}
+          {QUICK_ACTIONS.map((action) => {
+            const ActionIcon = action.Icon;
+            return (
+              <button
+                key={action.label}
+                onClick={() => sendMessage(action.query)}
+                className="action-btn"
+                disabled={loading}
+                aria-label={`Ask: ${action.query}`}
+              >
+                <ActionIcon size={14} strokeWidth={1.8} />
+                {action.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* ── Input bar ─────────────────────────────────────── */}
         <div className="chat-input-area">
+          {/* File preview strip */}
+          <AnimatePresence>
+            {attachedFiles.length > 0 && (
+              <motion.div
+                className="file-preview-strip"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+              >
+                {attachedFiles.map((file, idx) => {
+                  const FileIcon = getFilePreviewIcon(file);
+                  return (
+                    <div key={idx} className="file-preview-chip">
+                      <FileIcon size={14} strokeWidth={1.8} />
+                      <span className="file-preview-name">{file.name}</span>
+                      <span className="file-preview-size">
+                        {(file.size / 1024).toFixed(0)}KB
+                      </span>
+                      <button
+                        className="file-remove-btn"
+                        onClick={() => removeFile(idx)}
+                        aria-label={`Remove ${file.name}`}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className={`input-group ${isListening ? 'listening' : ''}`}>
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,.pdf,.txt,.csv,.doc,.docx"
+              onChange={handleFileSelect}
+              className="file-input-hidden"
+              aria-hidden="true"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="attach-btn"
+              title="Attach files (images, PDF, TXT — max 5MB)"
+              aria-label="Attach files"
+              disabled={loading || attachedFiles.length >= 3}
+            >
+              <Paperclip size={17} strokeWidth={1.8} />
+            </button>
             <input
               ref={inputRef}
               type="text"
@@ -409,21 +539,21 @@ function Chat() {
               title="Voice input"
               aria-label="Start voice input"
             >
-              <UiIcon name="voice" size={17} />
+              <Mic size={17} strokeWidth={1.8} />
             </button>
             <button
               onClick={() => sendMessage()}
               className="send-btn"
-              disabled={loading || !input.trim()}
+              disabled={loading || (!input.trim() && !attachedFiles.length)}
               aria-label="Send message"
             >
               {loading
                 ? <span className="send-spinner" />
-                : <UiIcon name="arrowRight" size={17} />
+                : <Send size={17} strokeWidth={1.8} />
               }
             </button>
           </div>
-          <p className="input-hint">Press Enter to send · Shift+Enter for new line</p>
+          <p className="input-hint">Press Enter to send · 📎 Attach images, PDFs, or text files (max 3)</p>
         </div>
       </div>
     </div>
