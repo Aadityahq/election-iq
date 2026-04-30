@@ -66,8 +66,9 @@ Deployment:
 3. Polling booth finder with geolocation and manual location fallback
 4. Quiz module with topic selection, scoring, and explanation feedback
 5. **Fact Checker** — AI-powered election claim verification (TRUE/FALSE/PARTIALLY_TRUE) with confidence levels
-6. Accessibility settings for high contrast and large text
-7. Responsive premium UI with shared SVG icons
+6. **Multi-Country Support** — Explore elections in 12+ countries (India, US, UK, Australia, Canada, Germany, France, Japan, Brazil, South Africa, New Zealand, Singapore) with direct links to official election commission websites
+7. Accessibility settings for high contrast and large text
+8. Responsive premium UI with shared SVG icons and Lovable.dev design system
 
 ## Current Architecture Notes
 - `src/App.jsx` uses route-level lazy loading with a Suspense fallback
@@ -75,8 +76,32 @@ Deployment:
 - `src/services/factCheckerService.js` handles fact verification with Gemini API and response parsing
 - `src/services/firebase.js` handles Firestore reads, writes, and analytics init
 - `src/services/mapsService.js` loads Google Maps and queries nearby polling places
+- `src/components/CountrySelector.jsx` displays 12 countries with search, selection, and official links
 - `server.js` serves the production `dist/` bundle on port `8080` for Cloud Run
 - All services follow the same error handling and fallback patterns for reliability
+
+## Design System (Lovable.dev Inspired)
+**Color Palette:**
+- Primary: #2563eb (blue-600), #60a5fa (blue-400), #1e40af (blue-800)
+- Text: #0f172a (primary), #334155 (secondary), #64748b (muted)
+- Backgrounds: White gradient to soft blue (#e0f2fe, #dbeafe)
+- Borders: #e2e8f0 (light gray)
+- Glass effect: rgba(255,255,255,0.7) with blur(16px)
+
+**Visual Features:**
+- Glassmorphism: Semi-transparent cards with backdrop blur
+- Soft shadows: 0 2px 8px to 0 16px 40px with low opacity
+- Rounded corners: 12px-32px depending on element
+- Smooth transitions: 0.2s-0.3s ease for all interactions
+- Responsive design: Mobile-first, optimized for all screen sizes
+
+## Recent Changes (Phases 10-12)
+- **Phase 10:** Removed gamification system - focused on core civic education features
+- **Phase 11:** Applied Lovable.dev color palette and design system - modern premium look
+  - Updated globals.css, navbar.css, and App.css
+  - Fixed CSS syntax errors and variable naming
+  - Optimized performance (reduced blur, simplified gradients)
+- **Phase 12:** Added multi-country support - CountrySelector component with 12 countries
 
 ## Why It Matters
 - Promotes civic awareness

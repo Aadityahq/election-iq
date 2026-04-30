@@ -17,6 +17,7 @@ import {
   Users,
   CheckCircle,
 } from 'lucide-react';
+import CountrySelector from '../components/CountrySelector';
 import '../styles/home.css';
 
 /* ── Lightweight card (CSS-only hover, no per-pixel re-renders) */
@@ -367,6 +368,9 @@ function Home() {
           })}
         </div>
       </section>
+
+      {/* ── Country Selector ─────────────────────────────────── */}
+      <CountrySelector />
 
       {/* ── CTA ──────────────────────────────────────────────── */}
       <motion.section

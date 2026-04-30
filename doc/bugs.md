@@ -48,6 +48,12 @@
 - [x] Chat history not persisting on page reload (Phase 1)
 - [x] Fact checker service error handling implemented (Phase 1)
 - [x] Fact checker input sanitization for security (Phase 1)
+- [x] CSS syntax errors - stray closing braces in globals.css (Phase 11)
+- [x] CSS variable naming conflicts - updated to use --primary-color, --primary-light, etc. (Phase 11)
+- [x] Chrome slow load performance - optimized backdrop-filter blur and removed saturate() (Phase 11)
+- [x] Old gamification CSS imports causing build errors - removed from App.css (Phase 10)
+- [x] Navbar CSS structure - fixed missing .nav-link.active selector (Phase 11)
+- [x] CountrySelector button visibility - changed to solid blue with black text (Phase 12)
 
 ## Known Issues
 - Component tests for Chat/Quiz may fail due to mock issues (low priority - unit tests comprehensive)
