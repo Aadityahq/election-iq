@@ -27,11 +27,11 @@ app.use((req, res, next) => {
   // Enforce HTTPS (if behind HTTPS proxy)
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   
-  // Content Security Policy (allows our own resources and Google APIs)
-  res.setHeader(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' https://generativelanguage.googleapis.com https://*.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://generativelanguage.googleapis.com https://*.googleapis.com https://*.firebaseio.com; frame-ancestors 'none';"
-  );
+    // Content Security Policy (allows our own resources and Google APIs)
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' https://generativelanguage.googleapis.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://maps.gstatic.com; connect-src 'self' https://generativelanguage.googleapis.com https://*.googleapis.com https://*.firebaseio.com https://maps.googleapis.com; frame-ancestors 'none';"
+    );
   
   next();
 });

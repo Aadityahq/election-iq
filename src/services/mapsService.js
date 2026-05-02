@@ -11,16 +11,26 @@ export async function loadMapsAPI() {
   }
 
   // Already loaded
-  if (window.google?.maps) return;
+  if (window.google?.maps) return window.google.maps;
 
   // Already loading — reuse the same promise to avoid duplicate script injection
   if (mapsLoadPromise) return mapsLoadPromise;
 
-  mapsLoadPromise = new Promise((resolve, reject) => {
+  mapsLoadPromise = new Promise(async (resolve, reject) => {
     // Check if script tag already exists (e.g. from HMR)
     const existing = document.querySelector(`script[src*="maps.googleapis.com"]`);
     if (existing) {
-      existing.addEventListener('load', resolve);
+      existing.addEventListener('load', () => {
+        // Wait for Google Maps to be available
+        const waitForMaps = () => {
+          if (window.google?.maps) {
+            resolve(window.google.maps);
+          } else {
+            setTimeout(waitForMaps, 100); // Check again in 100ms
+          }
+        };
+        waitForMaps();
+      });
       return;
     }
 
@@ -28,7 +38,17 @@ export async function loadMapsAPI() {
     script.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_API_KEY}&libraries=places&loading=async`;
     script.async = true;
     script.defer = true;
-    script.onload = resolve;
+    script.onload = () => {
+      // Wait for Google Maps to be available after script loads
+      const waitForMaps = () => {
+        if (window.google?.maps) {
+          resolve(window.google.maps);
+        } else {
+          setTimeout(waitForMaps, 100); // Check again in 100ms
+        }
+      };
+      waitForMaps();
+    };
     script.onerror = () => {
       mapsLoadPromise = null;
       reject(new Error('Failed to load Google Maps API'));
@@ -80,3 +100,5 @@ export async function getNearbyPollingStations(lat, lng, mapInstance) {
 export function getDirectionsLink(lat, lng) {
   return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 }
+
+
