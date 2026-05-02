@@ -9,30 +9,27 @@ const port = process.env.PORT || 8080;
 
 // Security headers middleware
 app.use((req, res, next) => {
-  // Prevent MIME type sniffing
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  
-  // Prevent clickjacking attacks
   res.setHeader('X-Frame-Options', 'DENY');
-  
-  // Enable XSS protection
   res.setHeader('X-XSS-Protection', '1; mode=block');
-  
-  // Control referrer information
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  
-   // Restrict feature access
-   res.setHeader('Permissions-Policy', 'microphone=(), camera=(), geolocation=*');
-  
-  // Enforce HTTPS (if behind HTTPS proxy)
+  res.setHeader('Permissions-Policy', 'geolocation=*, microphone=*, camera=()');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  
-    // Content Security Policy (allows our own resources and Google APIs)
-    res.setHeader(
-      'Content-Security-Policy',
-      "default-src 'self'; script-src 'self' https://generativelanguage.googleapis.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://maps.gstatic.com; connect-src 'self' https://generativelanguage.googleapis.com https://*.googleapis.com https://*.firebaseio.com https://maps.googleapis.com; frame-ancestors 'none';"
-    );
-  
+
+  res.setHeader(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' https://maps.googleapis.com https://maps.gstatic.com https://*.googleapis.com https://www.googletagmanager.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://maps.googleapis.com",
+      "img-src 'self' data: blob: https: http:",
+      "font-src 'self' https://fonts.gstatic.com https://maps.gstatic.com",
+      "connect-src 'self' https://generativelanguage.googleapis.com https://*.googleapis.com https://*.firebaseio.com https://maps.googleapis.com https://firestore.googleapis.com https://www.google-analytics.com",
+      "frame-src https://www.google.com",
+      "frame-ancestors 'none'"
+    ].join('; ')
+  );
+
   next();
 });
 
