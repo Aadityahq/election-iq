@@ -106,10 +106,10 @@ function Quiz() {
           <div className="score-percentage">{percentage}%</div>
         </div>
 
-        {percentage === 100 && <p className="feedback perfect">Perfect! You're an election expert! 🏆</p>}
+        {percentage === 100 && <p className="feedback perfect">Perfect! You&#39;re an election expert! 🏆</p>}
         {percentage >= 80 && percentage < 100 && <p className="feedback great">Great job! You know a lot about elections! ⭐</p>}
         {percentage >= 60 && percentage < 80 && <p className="feedback good">Good! Keep learning more! 📖</p>}
-        {percentage < 60 && <p className="feedback keep-trying">Keep learning! You're on your way! 💪</p>}
+        {percentage < 60 && <p className="feedback keep-trying">Keep learning! You&#39;re on your way! 💪</p>}
 
         <div className="result-actions">
           <button onClick={() => startQuiz(activeCategory)} className="retry-btn">

@@ -2,8 +2,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getMessages, saveMessage, saveQuizScore, getQuizScores, initFirebaseAnalytics } from '../../services/firebase';
 
 // Mock Firebase modules
-vi.mock('firebase/app');
-vi.mock('firebase/analytics');
+vi.mock('firebase/app', () => ({
+  initializeApp: vi.fn().mockReturnValue({}),
+}));
+vi.mock('firebase/analytics', () => ({
+  isSupported: vi.fn(),
+  getAnalytics: vi.fn()
+}));
 vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(() => ({ mockDb: true })),
   collection: vi.fn((db, name) => ({ collectionName: name })),
@@ -264,24 +269,24 @@ describe('firebase.js', () => {
       expect(result).toBeNull();
     });
 
-    it('should return null on error', async () => {
-      const analyticsModule = await import('firebase/analytics');
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
-      analyticsModule.isSupported = vi.fn().mockResolvedValueOnce(true);
-      analyticsModule.getAnalytics = vi.fn().mockImplementationOnce(() => {
-        throw new Error('Init failed');
-      });
-      
-      const result = await initFirebaseAnalytics();
-      
-      expect(result).toBeNull();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error initializing analytics:',
-        expect.any(Error)
-      );
-      
-      consoleErrorSpy.mockRestore();
-    });
+     it('should return null on error', async () => {
+       const analyticsModule = await import('firebase/analytics');
+       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+       
+       analyticsModule.isSupported = vi.fn().mockResolvedValueOnce(true);
+       analyticsModule.getAnalytics = vi.fn().mockImplementationOnce(() => {
+         throw new Error('Init failed');
+       });
+       
+       const result = await initFirebaseAnalytics();
+       
+       expect(result).toBeNull();
+       expect(consoleErrorSpy).toHaveBeenCalledWith(
+         'Error initializing analytics:',
+         expect.any(Error)
+       );
+       
+       consoleErrorSpy.mockRestore();
+     });
   });
 });

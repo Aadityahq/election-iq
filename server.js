@@ -21,8 +21,8 @@ app.use((req, res, next) => {
   // Control referrer information
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   
-  // Restrict feature access
-  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+   // Restrict feature access
+   res.setHeader('Permissions-Policy', 'microphone=(), camera=(), geolocation=*');
   
   // Enforce HTTPS (if behind HTTPS proxy)
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');

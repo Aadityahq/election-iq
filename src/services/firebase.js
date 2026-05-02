@@ -34,10 +34,11 @@ export async function initFirebaseAnalytics() {
 
   try {
     return getAnalytics(app);
-  } catch (err) {
-    console.error('Error initializing analytics:', err);
-    return null;
-  }
+   } catch (err) {
+     console.log('Caught error in initFirebaseAnalytics:', err);
+     console.error('Error initializing analytics:', err);
+     return null;
+   }
 }
 
 export async function saveMessage(sessionId, message, sender) {

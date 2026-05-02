@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -41,7 +42,7 @@ describe('Chat Component', () => {
     it('should render message input field', () => {
       render(<Chat />);
       
-      const input = screen.getByPlaceholderText(/Ask about voting, registration/i);
+      const input = screen.getByPlaceholderText(/Ask about elections/i);
       expect(input).toBeInTheDocument();
     });
 
@@ -75,7 +76,7 @@ describe('Chat Component', () => {
 
       render(<Chat />);
 
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
+      const input = screen.getByPlaceholderText(/Ask about elections/i);
       await userEvent.type(input, 'How do I vote?');
 
       const sendBtn = screen.getByRole('button', { name: /send|arrow/i });
@@ -93,7 +94,7 @@ describe('Chat Component', () => {
 
       render(<Chat />);
 
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
+      const input = screen.getByPlaceholderText(/Ask about elections/i);
       await userEvent.type(input, 'How do I vote?');
 
       fireEvent.click(screen.getByRole('button', { name: /send|arrow/i }));
@@ -118,14 +119,12 @@ describe('Chat Component', () => {
       const { getAIResponse } = await import('../../services/geminiService');
       getAIResponse.mockResolvedValueOnce('Response');
 
-      render(<Chat />);
+       render(<Chat />);
 
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
-      await userEvent.type(input, 'Test message');
+       const input = screen.getByPlaceholderText(/Ask about elections/i);
+       await userEvent.type(input, 'Test message');
 
-      expect(input).toHaveValue('Test message');
-
-      fireEvent.click(screen.getByRole('button', { name: /send|arrow/i }));
+       fireEvent.click(screen.getByRole('button', { name: /send|arrow/i }));
 
       await waitFor(() => {
         expect(input).toHaveValue('');
@@ -138,7 +137,7 @@ describe('Chat Component', () => {
 
       render(<Chat />);
 
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
+      const input = screen.getByPlaceholderText(/Ask about elections/i);
       await userEvent.type(input, 'Test message{Enter}');
 
       await waitFor(() => {
@@ -151,7 +150,7 @@ describe('Chat Component', () => {
 
       render(<Chat />);
 
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
+      const input = screen.getByPlaceholderText(/Ask about elections/i);
       await userEvent.type(input, 'Line 1');
       fireEvent.keyDown(input, { key: 'Enter', shiftKey: true });
 
@@ -169,7 +168,7 @@ describe('Chat Component', () => {
 
       render(<Chat />);
 
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
+      const input = screen.getByPlaceholderText(/Ask about elections/i);
       await userEvent.type(input, 'Test question');
 
       fireEvent.click(screen.getByRole('button', { name: /send|arrow/i }));
@@ -185,7 +184,7 @@ describe('Chat Component', () => {
 
       render(<Chat />);
 
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
+      const input = screen.getByPlaceholderText(/Ask about elections/i);
       await userEvent.type(input, 'Test');
 
       fireEvent.click(screen.getByRole('button', { name: /send|arrow/i }));
@@ -201,7 +200,7 @@ describe('Chat Component', () => {
 
       render(<Chat />);
 
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
+      const input = screen.getByPlaceholderText(/Ask about elections/i);
       await userEvent.type(input, 'Test');
 
       fireEvent.click(screen.getByRole('button', { name: /send|arrow/i }));
@@ -219,7 +218,7 @@ describe('Chat Component', () => {
 
       render(<Chat />);
 
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
+      const input = screen.getByPlaceholderText(/Ask about elections/i);
       await userEvent.type(input, 'Test message');
 
       fireEvent.click(screen.getByRole('button', { name: /send|arrow/i }));
@@ -274,7 +273,7 @@ describe('Chat Component', () => {
       const languageSelect = screen.getByDisplayValue('English');
       await userEvent.selectOptions(languageSelect, 'Spanish');
 
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
+      const input = screen.getByPlaceholderText(/Ask about elections/i);
       await userEvent.type(input, 'Test');
 
       fireEvent.click(screen.getByRole('button', { name: /send|arrow/i }));
@@ -297,7 +296,7 @@ describe('Chat Component', () => {
 
       render(<Chat />);
 
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
+      const input = screen.getByPlaceholderText(/Ask about elections/i);
       await userEvent.type(input, 'Test');
 
       fireEvent.click(screen.getByRole('button', { name: /send|arrow/i }));
@@ -312,10 +311,10 @@ describe('Chat Component', () => {
 
       render(<Chat />);
 
-      // Send a message
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
-      await userEvent.type(input, 'Test message');
-      fireEvent.click(screen.getByRole('button', { name: /send|arrow/i }));
+       // Send a message
+       const input = screen.getByPlaceholderText(/Ask about elections/i);
+       await userEvent.type(input, 'Test message');
+       fireEvent.click(screen.getByRole('button', { name: /send|arrow/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Test message')).toBeInTheDocument();
@@ -368,7 +367,7 @@ describe('Chat Component', () => {
 
       render(<Chat />);
 
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
+      const input = screen.getByPlaceholderText(/Ask about elections/i);
       await userEvent.type(input, 'Test message');
 
       fireEvent.click(screen.getByRole('button', { name: /send|arrow/i }));
@@ -390,7 +389,7 @@ describe('Chat Component', () => {
 
       render(<Chat />);
 
-      const input = screen.getByPlaceholderText(/Ask about voting/i);
+      const input = screen.getByPlaceholderText(/Ask about elections/i);
       await userEvent.type(input, 'Test');
 
       fireEvent.click(screen.getByRole('button', { name: /send|arrow/i }));

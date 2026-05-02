@@ -11,9 +11,9 @@ node_modules
 *.local
 
 # Environment variables
+dist/
 .env
 .env.local
-.env.*.local
 
 # IDE
 .vscode
@@ -26,3 +26,5 @@ node_modules
 .DS_Store
 Thumbs.db
 
+dist/
+.env.local

@@ -3,139 +3,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getAIResponse } from '../services/geminiService';
 import { saveMessage, getMessages } from '../services/firebase';
 import { generateSessionId } from '../utils/helpers';
-import {
-  Shield,
-  ClipboardCheck,
-  CheckCircle,
-  BarChart3,
-  Clock,
-  Send,
-  Mic,
-  ArrowRight,
-  Paperclip,
-  X,
-  FileText,
-  Image as ImageIcon,
-} from 'lucide-react';
+import { renderMarkdown } from '../utils/markdownRenderer.jsx';
+import ChatHeader from './Chat/ChatHeader';
+import QuickActions from './Chat/QuickActions';
+import ErrorBanner from './Chat/ErrorBanner';
+import InputArea from './Chat/InputArea';
+import Message from './Chat/Message';
+import { getFilePreviewIcon } from './Chat/helpers';
+import { Shield } from 'lucide-react';
+
 import '../styles/chat.css';
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Lightweight markdown → React elements renderer
-   Handles: **bold**, *italic*, numbered lists, bullet lists, line breaks
-   ───────────────────────────────────────────────────────────────────────── */
-function renderMarkdown(text) {
-  // Split into paragraphs / list items
-  const lines = text.split('\n');
-  const elements = [];
-  let key = 0;
-
-  let listBuffer = [];
-  let listType = null; // 'ol' | 'ul'
-
-  const flushList = () => {
-    if (!listBuffer.length) return;
-    const Tag = listType;
-    elements.push(
-      React.createElement(
-        Tag,
-        { key: key++, className: `md-list md-${listType}` },
-        listBuffer.map((item, i) =>
-          React.createElement('li', { key: i }, renderInline(item))
-        )
-      )
-    );
-    listBuffer = [];
-    listType = null;
-  };
-
-  for (const raw of lines) {
-    const line = raw.trimEnd();
-
-    // Ordered list:  1. item
-    const olMatch = line.match(/^\s*\d+\.\s+(.+)/);
-    if (olMatch) {
-      if (listType === 'ul') flushList();
-      listType = 'ol';
-      listBuffer.push(olMatch[1]);
-      continue;
-    }
-
-    // Unordered list: - item  or • item
-    const ulMatch = line.match(/^\s*[-•*]\s+(.+)/);
-    if (ulMatch) {
-      if (listType === 'ol') flushList();
-      listType = 'ul';
-      listBuffer.push(ulMatch[1]);
-      continue;
-    }
-
-    // Empty line → flush list + add spacer
-    if (!line.trim()) {
-      flushList();
-      elements.push(<span key={key++} className="md-br" />);
-      continue;
-    }
-
-    // Regular paragraph
-    flushList();
-    elements.push(
-      <p key={key++} className="md-p">
-        {renderInline(line)}
-      </p>
-    );
-  }
-
-  flushList();
-  return elements;
-}
-
-function renderInline(text) {
-  // Bold **text** or __text__
-  const parts = text.split(/(\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_)/g);
-  return parts.map((part, i) => {
-    if (/^\*\*(.+)\*\*$/.test(part) || /^__(.+)__$/.test(part)) {
-      const inner = part.slice(2, -2);
-      return <strong key={i}>{inner}</strong>;
-    }
-    if (/^\*(.+)\*$/.test(part) || /^_(.+)_$/.test(part)) {
-      return <em key={i}>{part.slice(1, -1)}</em>;
-    }
-    return part;
-  });
-}
-
-/* ─────────────────────────────────────────────────────────────────────────
-   Constants
-   ───────────────────────────────────────────────────────────────────────── */
-const INITIAL_MESSAGES = [
-  {
-    id: 1,
-    role: 'bot',
-    text: "Hello! I'm **ElectionIQ** 🗳️ — your civic education guide.\n\nAsk me anything about how elections work: voter registration, polling, vote counting, and more!",
-    timestamp: new Date(),
-  },
-];
-
-const QUICK_ACTIONS = [
-  { label: 'Register to vote', Icon: ClipboardCheck, query: 'How do I register to vote in India?' },
-  { label: 'Voting day', Icon: CheckCircle, query: 'What happens on voting day?' },
-  { label: 'Vote counting', Icon: BarChart3, query: 'How are votes counted in India?' },
-  { label: 'Election timeline', Icon: Clock, query: 'Explain the election timeline step by step.' },
-  { label: 'EVM & VVPAT', Icon: Shield, query: 'What is an EVM and VVPAT?' },
-];
-
-const LANG_MAP = {
-  English: 'en-US',
-  Hindi: 'hi-IN',
-  Spanish: 'es-ES',
-  French: 'fr-FR',
-};
-
-/* ─────────────────────────────────────────────────────────────────────────
-   Chat Component
-   ───────────────────────────────────────────────────────────────────────── */
+    Chat Component - Refactored for better maintainability
+    ───────────────────────────────────────────────────────────────────────── */
 function Chat() {
-  const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorBanner, setErrorBanner] = useState('');
@@ -148,6 +31,16 @@ function Chat() {
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+  // Initialize with greeting message
+  useEffect(() => {
+    setMessages([{
+      id: 1,
+      role: 'bot',
+      text: "Hello! I'm **ElectionIQ** 🗳️ — your civic education guide.\n\nAsk me anything about how elections work: voter registration, polling, vote counting, and more!",
+      timestamp: new Date(),
+    }]);
+  }, []);
 
   // Load chat history on component mount
   useEffect(() => {
@@ -180,6 +73,7 @@ function Chat() {
     loadChatHistory();
   }, [sessionId]);
 
+  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
@@ -214,14 +108,9 @@ function Chat() {
     setAttachedFiles(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const getFilePreviewIcon = (file) => {
-    if (file.type.startsWith('image/')) return ImageIcon;
-    return FileText;
-  };
-
-  const sendMessage = useCallback(
-    async (overrideText) => {
-      const messageText = (overrideText ?? input).replace(/[<>]/g, '').trim();
+   const sendMessage = useCallback(
+     async (overrideText) => {
+       const messageText = String((overrideText ?? input) || '').replace(/[<>]/g, '').trim();
       if ((!messageText && !attachedFiles.length) || loading) return;
 
       setErrorBanner('');
@@ -326,7 +215,12 @@ function Chat() {
   };
 
   const clearChat = () => {
-    setMessages(INITIAL_MESSAGES);
+    setMessages([{
+      id: 1,
+      role: 'bot',
+      text: "Hello! I'm **ElectionIQ** 🗳️ — your civic education guide.\n\nAsk me anything about how elections work: voter registration, polling, vote counting, and more!",
+      timestamp: new Date(),
+    }]);
     setErrorBanner('');
     setLastFailedQuery(null);
   };
@@ -334,61 +228,20 @@ function Chat() {
   return (
     <div className="chat-page-wrapper">
       <div className="chat-container">
-
-        {/* ── Header ─────────────────────────────────────────── */}
-        <div className="chat-header">
-          <div className="chat-header-left">
-            <div className="bot-avatar">
-              <Shield size={18} strokeWidth={2} />
-            </div>
-            <div className="chat-header-info">
-              <h2>ElectionIQ</h2>
-              <div className="online-badge">
-                <span className={`online-dot ${loading ? 'thinking' : ''}`} />
-                {loading ? 'Thinking…' : 'AI-powered · Always available'}
-              </div>
-            </div>
-          </div>
-
-          <div className="header-controls">
-            <label htmlFor="chat-language" className="sr-only">Language</label>
-            <select
-              id="chat-language"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="language-select"
-            >
-              <option value="English">🌐 EN</option>
-              <option value="Hindi">🇮🇳 हिंदी</option>
-              <option value="Spanish">🇪🇸 ES</option>
-              <option value="French">🇫🇷 FR</option>
-            </select>
-            <button onClick={clearChat} className="clear-chat-btn" title="Clear conversation">
-              Clear
-            </button>
-          </div>
-        </div>
-
+        <ChatHeader 
+          language={language} 
+          setLanguage={setLanguage} 
+          loading={loading} 
+          clearChat={clearChat} 
+        />
+        
         {/* ── Error / Retry Banner ───────────────────────────── */}
-        <AnimatePresence>
-          {errorBanner && (
-            <motion.div
-              className="chat-error"
-              role="alert"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-            >
-              <span>{errorBanner}</span>
-              {lastFailedQuery && (
-                <button className="retry-btn" onClick={retryLast}>
-                  ↻ Retry
-                </button>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
+        <ErrorBanner 
+          errorBanner={errorBanner} 
+          lastFailedQuery={lastFailedQuery} 
+          retryLast={retryLast} 
+        />
+        
         {/* ── Messages ──────────────────────────────────────── */}
         <div
           className="messages-container"
@@ -397,35 +250,10 @@ function Chat() {
         >
           <AnimatePresence initial={false}>
             {messages.map((msg) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.22 }}
-                className={`message ${msg.role}`}
-              >
-                {msg.role === 'bot' && (
-                  <div className="msg-avatar bot-msg-avatar">
-                    <Shield size={14} strokeWidth={2} />
-                  </div>
-                )}
-
-                <div className="message-content">
-                  <div className="message-body">
-                    {renderMarkdown(msg.text)}
-                  </div>
-                  <span className="timestamp">
-                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-
-                {msg.role === 'user' && (
-                  <div className="msg-avatar user-msg-avatar">You</div>
-                )}
-              </motion.div>
+              <Message key={msg.id} msg={msg} />
             ))}
           </AnimatePresence>
-
+          
           {loading && (
             <motion.div
               key="typing"
@@ -448,116 +276,37 @@ function Chat() {
         </div>
 
         {/* ── Quick actions ──────────────────────────────────── */}
-        <div className="quick-actions" aria-label="Suggested questions">
-          <span className="quick-actions-label">Quick questions</span>
-          {QUICK_ACTIONS.map((action) => {
-            const ActionIcon = action.Icon;
-            return (
-              <button
-                key={action.label}
-                onClick={() => sendMessage(action.query)}
-                className="action-btn"
-                disabled={loading}
-                aria-label={`Ask: ${action.query}`}
-              >
-                <ActionIcon size={14} strokeWidth={1.8} />
-                {action.label}
-              </button>
-            );
-          })}
-        </div>
+        <QuickActions 
+          sendMessage={sendMessage} 
+          loading={loading} 
+        />
 
         {/* ── Input bar ─────────────────────────────────────── */}
-        <div className="chat-input-area">
-          {/* File preview strip */}
-          <AnimatePresence>
-            {attachedFiles.length > 0 && (
-              <motion.div
-                className="file-preview-strip"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-              >
-                {attachedFiles.map((file, idx) => {
-                  const FileIcon = getFilePreviewIcon(file);
-                  return (
-                    <div key={idx} className="file-preview-chip">
-                      <FileIcon size={14} strokeWidth={1.8} />
-                      <span className="file-preview-name">{file.name}</span>
-                      <span className="file-preview-size">
-                        {(file.size / 1024).toFixed(0)}KB
-                      </span>
-                      <button
-                        className="file-remove-btn"
-                        onClick={() => removeFile(idx)}
-                        aria-label={`Remove ${file.name}`}
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  );
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className={`input-group ${isListening ? 'listening' : ''}`}>
-            {/* Hidden file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*,.pdf,.txt,.csv,.doc,.docx"
-              onChange={handleFileSelect}
-              className="file-input-hidden"
-              aria-hidden="true"
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="attach-btn"
-              title="Attach files (images, PDF, TXT — max 5MB)"
-              aria-label="Attach files"
-              disabled={loading || attachedFiles.length >= 3}
-            >
-              <Paperclip size={17} strokeWidth={1.8} />
-            </button>
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={isListening ? '🎙️ Listening…' : 'Ask about elections…'}
-              className="chat-input"
-              disabled={loading}
-              aria-label="Type your question"
-              maxLength={500}
-            />
-            <button
-              onClick={startVoiceInput}
-              className={`voice-btn ${isListening ? 'voice-btn--active' : ''}`}
-              title="Voice input"
-              aria-label="Start voice input"
-            >
-              <Mic size={17} strokeWidth={1.8} />
-            </button>
-            <button
-              onClick={() => sendMessage()}
-              className="send-btn"
-              disabled={loading || (!input.trim() && !attachedFiles.length)}
-              aria-label="Send message"
-            >
-              {loading
-                ? <span className="send-spinner" />
-                : <Send size={17} strokeWidth={1.8} />
-              }
-            </button>
-          </div>
-          <p className="input-hint">Press Enter to send · 📎 Attach images, PDFs, or text files (max 3)</p>
-        </div>
+        <InputArea 
+          input={input} 
+          setInput={setInput} 
+          handleFileSelect={handleFileSelect} 
+          fileInputRef={fileInputRef} 
+          inputRef={inputRef} 
+          startVoiceInput={startVoiceInput} 
+          sendMessage={sendMessage} 
+          attachedFiles={attachedFiles} 
+          removeFile={removeFile} 
+          isListening={isListening} 
+          loading={loading}
+          getFilePreviewIcon={getFilePreviewIcon}
+        />
       </div>
     </div>
   );
 }
+
+// Language map constant
+const LANG_MAP = {
+  English: 'en-US',
+  Hindi: 'hi-IN',
+  Spanish: 'es-ES',
+  French: 'fr-FR',
+};
 
 export default Chat;

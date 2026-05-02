@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from "react";
 import "../styles/CountrySelector.css";
 
@@ -139,31 +140,31 @@ export default function CountrySelector() {
           Select a country to visit its official election commission website
         </p>
 
-        <div className="country-search-wrapper">
-          <span className="country-search-icon">🔍</span>
-          <input
-            className="country-search-input"
-            type="text"
-            placeholder="Search countries..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {search && (
-            <button
-              className="country-search-clear"
-              onClick={() => setSearch("")}
-            >
-              ✕
-            </button>
-          )}
-        </div>
+       <div className="country-search-wrapper">
+         <span className="country-search-icon">🔍</span>
+         <input
+           className="country-search-input"
+           type="text"
+           placeholder="Search countries..."
+           value={search}
+           onChange={(e) => setSearch(e.target.value)}
+         />
+         {search && (
+           <button
+             className="country-search-clear"
+             onClick={() => setSearch("")}
+           >
+             &times;
+           </button>
+         )}
+       </div>
       </div>
 
       <div className="country-grid">
         {filtered.length === 0 && (
           <div className="country-empty">
             <span>🌐</span>
-            <p>No countries found for "{search}"</p>
+             <p>No countries found for &quot;{search}&quot;</p>
           </div>
         )}
         {filtered.map((country) => (

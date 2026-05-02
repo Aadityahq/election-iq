@@ -216,7 +216,7 @@ function Timeline() {
           </div>
           <div>
             <h4>Free &amp; Fair</h4>
-            <p>India's Election Commission ensures every vote is counted transparently.</p>
+             <p>India&#39;s Election Commission ensures every vote is counted transparently.</p>
           </div>
         </div>
         <div className="info-card">
@@ -225,7 +225,7 @@ function Timeline() {
           </div>
           <div>
             <h4>Your Vote Matters</h4>
-            <p>Over 900 million eligible voters participate in India's general elections.</p>
+             <p>Over 900 million eligible voters participate in India&#39;s general elections.</p>
           </div>
         </div>
         <div className="info-card">
