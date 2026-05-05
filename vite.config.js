@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
+import { join } from 'path'
 
 export default defineConfig({
   plugins: [react(), visualizer({
-    filename: './node_modules/.cache/visualizer/stats.html',
-    open: true,
+    filename: join(process.cwd(), 'node_modules/.cache/visualizer/stats.html'),
+    open: false,  // Set to false to avoid issues in CI/CD
     gzipSize: true,
     brotliSize: true,
   })],
